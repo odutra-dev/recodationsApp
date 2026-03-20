@@ -8,10 +8,14 @@ import {
   Delete,
   HttpCode,
   HttpStatus,
+  UseInterceptors,
+  UploadedFile,
 } from '@nestjs/common';
 import { MessageService } from './message.service';
 import { CreateMessageDto } from './dto/create-message.dto';
 import { UpdateMessageDto } from './dto/update-message.dto';
+import { FileInterceptor } from '@nestjs/platform-express';
+import { ApiBody, ApiConsumes } from '@nestjs/swagger';
 
 @Controller('message')
 export class MessageController {
@@ -19,8 +23,31 @@ export class MessageController {
 
   @HttpCode(HttpStatus.CREATED)
   @Post()
-  create(@Body() createMessageDto: CreateMessageDto) {
-    return this.messageService.create(createMessageDto);
+  @ApiConsumes('multipart/form-data')
+  @ApiBody({
+    schema: {
+      type: 'object',
+      required: ['content', 'name'],
+      properties: {
+        name: {
+          type: 'string',
+        },
+        content: {
+          type: 'string',
+        },
+        file: {
+          type: 'string',
+          format: 'binary',
+        },
+      },
+    },
+  })
+  @UseInterceptors(FileInterceptor('file'))
+  create(
+    @Body() createMessageDto: CreateMessageDto,
+    @UploadedFile() file: Express.Multer.File,
+  ) {
+    return this.messageService.create(createMessageDto, file);
   }
 
   @Get()
