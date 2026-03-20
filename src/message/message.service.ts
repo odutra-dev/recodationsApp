@@ -1,4 +1,4 @@
-import { Injectable } from '@nestjs/common';
+import { HttpException, HttpStatus, Injectable } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { CreateMessageDto } from './dto/create-message.dto';
 import { UpdateMessageDto } from './dto/update-message.dto';
@@ -13,6 +13,15 @@ export class MessageService {
     private messageRepository: Repository<Message>,
     private readonly s3Service: S3Service,
   ) {}
+
+  async verifyMessage(id: number): Promise<void> {
+    const message = await this.messageRepository.findOne({ where: { id } });
+
+    if (!message) {
+      throw new HttpException('Message not found', HttpStatus.NOT_FOUND);
+    }
+  }
+
   async create(
     createMessageDto: CreateMessageDto,
     file: Express.Multer.File,
@@ -36,17 +45,34 @@ export class MessageService {
     return this.messageRepository.find();
   }
 
-  findOne(id: number): Promise<Message | null> {
-    return this.messageRepository.findOne({ where: { id } });
+  async findOne(id: number): Promise<Message | null> {
+    if (!id) {
+      throw new HttpException('ID is required', HttpStatus.BAD_REQUEST);
+    }
+
+    await this.verifyMessage(id);
+
+    return await this.messageRepository.findOne({ where: { id } });
   }
 
-  update(id: number, updateMessageDto: UpdateMessageDto): Promise<void> {
-    return this.messageRepository
+  async update(id: number, updateMessageDto: UpdateMessageDto): Promise<void> {
+    if (!id) {
+      throw new HttpException('ID is required', HttpStatus.BAD_REQUEST);
+    }
+    await this.verifyMessage(id);
+
+    return await this.messageRepository
       .update(id, updateMessageDto)
       .then(() => undefined);
   }
 
   async remove(id: number): Promise<void> {
+    if (!id) {
+      throw new HttpException('ID is required', HttpStatus.BAD_REQUEST);
+    }
+
+    await this.verifyMessage(id);
+
     await this.messageRepository.delete(id);
   }
 }
