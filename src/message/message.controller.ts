@@ -10,6 +10,7 @@ import {
   HttpStatus,
   UseInterceptors,
   UploadedFile,
+  HttpException,
 } from '@nestjs/common';
 import { MessageService } from './message.service';
 import { CreateMessageDto } from './dto/create-message.dto';
@@ -42,7 +43,22 @@ export class MessageController {
       },
     },
   })
-  @UseInterceptors(FileInterceptor('file'))
+  @UseInterceptors(
+    FileInterceptor('file', {
+      fileFilter: (req, file, cb) => {
+        if (!file.mimetype.startsWith('image/')) {
+          return cb(
+            new HttpException(
+              'Only image files are allowed',
+              HttpStatus.BAD_REQUEST,
+            ),
+            false,
+          );
+        }
+        cb(null, true);
+      },
+    }),
+  )
   create(
     @Body() createMessageDto: CreateMessageDto,
     @UploadedFile() file: Express.Multer.File,
