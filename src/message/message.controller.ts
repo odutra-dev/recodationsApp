@@ -76,9 +76,49 @@ export class MessageController {
     return this.messageService.findOne(+id);
   }
 
+  @HttpCode(HttpStatus.NO_CONTENT)
+  @ApiConsumes('multipart/form-data')
+  @ApiBody({
+    schema: {
+      type: 'object',
+      required: ['content', 'name'],
+      properties: {
+        name: {
+          type: 'string',
+        },
+        content: {
+          type: 'string',
+        },
+        file: {
+          type: 'string',
+          format: 'binary',
+        },
+      },
+    },
+  })
+  @UseInterceptors(
+    FileInterceptor('file', {
+      fileFilter: (req, file, cb) => {
+        if (!file.mimetype.startsWith('image/')) {
+          return cb(
+            new HttpException(
+              'Only image files are allowed',
+              HttpStatus.BAD_REQUEST,
+            ),
+            false,
+          );
+        }
+        cb(null, true);
+      },
+    }),
+  )
   @Patch(':id')
-  update(@Param('id') id: string, @Body() updateMessageDto: UpdateMessageDto) {
-    return this.messageService.update(+id, updateMessageDto);
+  update(
+    @Param('id') id: string,
+    @Body() updateMessageDto: UpdateMessageDto,
+    @UploadedFile() file: Express.Multer.File,
+  ) {
+    return this.messageService.update(+id, updateMessageDto, file);
   }
 
   @Delete(':id')

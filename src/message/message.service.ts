@@ -55,15 +55,35 @@ export class MessageService {
     return await this.messageRepository.findOne({ where: { id } });
   }
 
-  async update(id: number, updateMessageDto: UpdateMessageDto): Promise<void> {
+  async update(
+    id: number,
+    updateMessageDto: UpdateMessageDto,
+    file?: Express.Multer.File,
+  ): Promise<void> {
     if (!id) {
       throw new HttpException('ID is required', HttpStatus.BAD_REQUEST);
     }
-    await this.verifyMessage(id);
 
-    return await this.messageRepository
-      .update(id, updateMessageDto)
-      .then(() => undefined);
+    const message = await this.messageRepository.findOne({ where: { id } });
+
+    if (!message) {
+      throw new HttpException('Message not found', HttpStatus.NOT_FOUND);
+    }
+
+    const updateData: Partial<Message> = {};
+    updateData.name = updateMessageDto.name;
+    updateData.content = updateMessageDto.content;
+
+    if (file) {
+      const upload = await this.s3Service.uploadFile('photos', file);
+      updateData.image = upload.url;
+    } else {
+      updateData.image = null;
+    }
+
+    console.log(updateData);
+
+    await this.messageRepository.update(id, updateData);
   }
 
   async remove(id: number): Promise<void> {
