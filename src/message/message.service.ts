@@ -70,9 +70,9 @@ export class MessageService {
       throw new HttpException('Message not found', HttpStatus.NOT_FOUND);
     }
 
-    const updateData: Partial<Message> = {};
-    updateData.name = updateMessageDto.name;
-    updateData.content = updateMessageDto.content;
+    const updateData: Partial<Message> = {
+      ...updateMessageDto,
+    };
 
     if (file) {
       const upload = await this.s3Service.uploadFile('photos', file);
@@ -80,8 +80,6 @@ export class MessageService {
     } else {
       updateData.image = null;
     }
-
-    console.log(updateData);
 
     await this.messageRepository.update(id, updateData);
   }
