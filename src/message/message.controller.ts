@@ -32,13 +32,18 @@ export class MessageController {
       properties: {
         name: {
           type: 'string',
+          description: 'Name of the message sender',
+          example: 'John Doe',
         },
         content: {
           type: 'string',
+          description: 'Content of the message',
+          example: 'Greetings friend! This is a message to your Wedding.',
         },
         file: {
           type: 'string',
           format: 'binary',
+          description: 'Your image file for the message (optional)',
         },
       },
     },
@@ -85,13 +90,18 @@ export class MessageController {
       properties: {
         name: {
           type: 'string',
+          description: 'Name of the message sender',
+          example: 'John Doe',
         },
         content: {
           type: 'string',
+          description: 'Content of the message',
+          example: 'Greetings friend! This is a message to your Wedding.',
         },
         file: {
           type: 'string',
           format: 'binary',
+          description: 'Your image file for the message (optional)',
         },
       },
     },
