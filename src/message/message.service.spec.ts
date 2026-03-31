@@ -161,20 +161,75 @@ describe('MessageService', () => {
       ).rejects.toThrow(HttpException);
     });
 
-    it('should update message', async () => {
-      const message = { id: 1 };
+    it('should throw if message not found', async () => {
+      mockMessageRepository.findOne.mockResolvedValue(null);
+
+      await expect(
+        service.update(1, {
+          content: 'updated',
+          name: 'test',
+        } as UpdateMessageDto),
+      ).rejects.toThrow('Message not found');
+    });
+
+    it('should update message without file', async () => {
+      const message = {
+        id: 1,
+        content: 'old content',
+        name: 'test',
+        image: 'old-image.jpg',
+      };
 
       mockMessageRepository.findOne.mockResolvedValue(message);
-      mockMessageRepository.update.mockResolvedValue({});
+      mockMessageRepository.update.mockResolvedValue({ affected: 1 });
 
       await service.update(1, {
-        content: 'updated',
-        name: 'test',
+        content: 'updated content',
+        name: 'test updated',
       } as UpdateMessageDto);
 
+      expect(mockMessageRepository.findOne).toHaveBeenCalledWith({
+        where: { id: 1 },
+      });
       expect(mockMessageRepository.update).toHaveBeenCalledWith(1, {
-        content: 'updated',
+        content: 'updated content',
+        name: 'test updated',
+        image: null,
+      });
+    });
+
+    it('should update message with file', async () => {
+      const message = {
+        id: 1,
+        content: 'old content',
         name: 'test',
+        image: 'old-image.jpg',
+      };
+      const file = { originalname: 'new-image.png' } as Express.Multer.File;
+
+      mockMessageRepository.findOne.mockResolvedValue(message);
+      mockS3Service.uploadFile.mockResolvedValue({
+        url: 'http://new-image.com',
+      });
+      mockMessageRepository.update.mockResolvedValue({ affected: 1 });
+
+      await service.update(
+        1,
+        {
+          content: 'updated content',
+          name: 'test updated',
+        } as UpdateMessageDto,
+        file,
+      );
+
+      expect(mockMessageRepository.findOne).toHaveBeenCalledWith({
+        where: { id: 1 },
+      });
+      expect(mockS3Service.uploadFile).toHaveBeenCalledWith('photos', file);
+      expect(mockMessageRepository.update).toHaveBeenCalledWith(1, {
+        content: 'updated content',
+        name: 'test updated',
+        image: 'http://new-image.com',
       });
     });
   });
