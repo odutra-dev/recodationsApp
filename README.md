@@ -715,8 +715,3 @@ Contributions are welcome! Please follow these guidelines:
 ## Support
 
 For issues and questions, please create an issue in the repository or contact the maintainers.
-
----
-
-**Last Updated**: 2026
-**Version**: 1.0.0
