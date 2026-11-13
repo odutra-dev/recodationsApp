@@ -2,8 +2,8 @@ version: "3.8"
 
 services:
   postgres:
-    container_name: "Local-Postgres"
-    image: postgres:latest
+    container_name: "recodations-postgres"
+    image: postgres:16-alpine
     restart: always
     ports:
       - "5432:5432"
@@ -12,20 +12,54 @@ services:
       - POSTGRES_PASSWORD=postgres
       - POSTGRES_DB=recodations
     volumes:
-      - "./volume/pgdata:/var/lib/postgresql"
+      - "./volume/pgdata:/var/lib/postgresql/data"
 
-  localstack:
-    container_name: "${LOCALSTACK_DOCKER_NAME:-localstack-main}"
-    image: localstack/localstack
+  floci-gcp:
+    container_name: "recodations-floci-gcp"
+    image: floci/floci-gcp:latest
+    restart: always
     ports:
-      - "4566:4566" # LocalStack Gateway
+      - "4588:4588"
     environment:
-      - AWS_DEFAULT_REGION=us-east-1
-      - AWS_ACCESS_KEY_ID=test
-      - AWS_SECRET_ACCESS_KEY=test
-      - SERVICES=s3
-      - EDGE_PORT=4566
-      - DEBUG=1
+      - FLOCI_STORAGE_MODE=memory
+      - GOOGLE_CLOUD_PROJECT=floci-local
     volumes:
-      - "${LOCALSTACK_VOLUME_DIR:-./volume}:/var/lib/localstack"
-      - "/var/run/docker.sock:/var/run/docker.sock"
+      - "./volume/floci:/var/lib/floci"
+
+  redis:
+    container_name: "recodations-redis"
+    image: redis:7-alpine
+    restart: always
+    ports:
+      - "6379:6379"
+    volumes:
+      - "./volume/redis:/data"
+
+  api:
+    container_name: "recodations-api"
+    build:
+      context: .
+      dockerfile: Dockerfile
+    restart: unless-stopped
+    ports:
+      - "3000:3000"
+    environment:
+      - PORT=3000
+      - APP_ENV=production
+      - DB_HOST=postgres
+      - DB_PORT=5432
+      - DB_USER=postgres
+      - DB_PASS=postgres
+      - DB_NAME=recodations
+      - DB_SSLMODE=disable
+      - REDIS_ADDR=redis:6379
+      - REDIS_PASSWORD=
+      - GOOGLE_CLOUD_PROJECT=floci-local
+      - STORAGE_EMULATOR_HOST=http://floci-gcp:4588
+      - GCS_BUCKET_NAME=photos
+      - JWT_SECRET=super-secret-jwt-token-key-32-bytes!
+      - SNOWFLAKE_NODE_ID=1
+    depends_on:
+      - postgres
+      - floci-gcp
+      - redis

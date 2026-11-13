@@ -1,0 +1,576 @@
+basePath: /
+definitions:
+  github_com_dutra_recodationsApp_internal_modules_auth_dto.LoginInput:
+    properties:
+      email:
+        type: string
+      password:
+        type: string
+    type: object
+  github_com_dutra_recodationsApp_internal_modules_messages_dto.CreateMessageInput:
+    properties:
+      content:
+        type: string
+      image:
+        type: string
+      name:
+        type: string
+    type: object
+  github_com_dutra_recodationsApp_internal_modules_messages_dto.TransitionMessageInput:
+    properties:
+      status:
+        type: string
+      version:
+        description: Required for Optimistic Locking
+        type: integer
+    type: object
+  github_com_dutra_recodationsApp_internal_modules_messages_dto.UpdateMessageInput:
+    properties:
+      content:
+        type: string
+      image:
+        type: string
+      name:
+        type: string
+      version:
+        description: Required for Optimistic Locking
+        type: integer
+    type: object
+  github_com_dutra_recodationsApp_internal_modules_rules_dto.CreateRuleInput:
+    properties:
+      code:
+        type: string
+      description:
+        type: string
+      name:
+        type: string
+    type: object
+  github_com_dutra_recodationsApp_internal_modules_users_dto.AssignRulesInput:
+    properties:
+      ruleIds:
+        items:
+          type: integer
+        type: array
+    type: object
+  github_com_dutra_recodationsApp_internal_modules_users_dto.CreateUserInput:
+    properties:
+      email:
+        type: string
+      name:
+        type: string
+      password:
+        type: string
+      ruleIds:
+        items:
+          type: integer
+        type: array
+    type: object
+  github_com_dutra_recodationsApp_internal_shared_presenter.ResponseDoc:
+    properties:
+      apiVersion:
+        type: integer
+      data: {}
+      detailsError:
+        type: string
+      errorValids:
+        additionalProperties:
+          items:
+            type: string
+          type: array
+        type: object
+      errors:
+        items:
+          type: string
+        type: array
+      message:
+        type: string
+      path:
+        type: string
+      success:
+        type: boolean
+      timestamp:
+        type: string
+      traceId:
+        type: string
+    type: object
+host: localhost:3000
+info:
+  contact:
+    email: support@recodations.com
+    name: API Team
+  description: Modular Monolith API in Go using Fiber v3, SOLID, SnowflakeID, Optimistic
+    Locking, State Transition Pattern, Inbox Pattern, Two-Level L1/L2 Cache, Resilient
+    Google Cloud Storage (floci-gcp), RBAC with JWT, and Audit Logging.
+  license:
+    name: MIT
+    url: https://opensource.org/licenses/MIT
+  title: Recodations Modular API
+  version: "1.0"
+paths:
+  /api/v1/audit-logs:
+    get:
+      description: Retrieves system audit logs for administrative inspection
+      parameters:
+      - default: 1
+        description: Page number
+        in: query
+        name: page
+        type: integer
+      - default: 20
+        description: Page size
+        in: query
+        name: limit
+        type: integer
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/github_com_dutra_recodationsApp_internal_shared_presenter.ResponseDoc'
+        "403":
+          description: Forbidden
+          schema:
+            $ref: '#/definitions/github_com_dutra_recodationsApp_internal_shared_presenter.ResponseDoc'
+      security:
+      - BearerAuth: []
+      summary: List system audit logs
+      tags:
+      - Audit
+  /api/v1/auth/login:
+    post:
+      consumes:
+      - application/json
+      description: Authenticates user and returns JWT bearer token
+      parameters:
+      - description: Credentials
+        in: body
+        name: credentials
+        required: true
+        schema:
+          $ref: '#/definitions/github_com_dutra_recodationsApp_internal_modules_auth_dto.LoginInput'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/github_com_dutra_recodationsApp_internal_shared_presenter.ResponseDoc'
+        "401":
+          description: Unauthorized
+          schema:
+            $ref: '#/definitions/github_com_dutra_recodationsApp_internal_shared_presenter.ResponseDoc'
+      summary: User login
+      tags:
+      - Auth
+  /api/v1/auth/register:
+    post:
+      consumes:
+      - application/json
+      description: Registers a new standard user
+      parameters:
+      - description: User Registration Data
+        in: body
+        name: input
+        required: true
+        schema:
+          $ref: '#/definitions/github_com_dutra_recodationsApp_internal_modules_users_dto.CreateUserInput'
+      produces:
+      - application/json
+      responses:
+        "201":
+          description: Created
+          schema:
+            $ref: '#/definitions/github_com_dutra_recodationsApp_internal_shared_presenter.ResponseDoc'
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/github_com_dutra_recodationsApp_internal_shared_presenter.ResponseDoc'
+        "409":
+          description: Conflict
+          schema:
+            $ref: '#/definitions/github_com_dutra_recodationsApp_internal_shared_presenter.ResponseDoc'
+      summary: Public user registration
+      tags:
+      - Auth
+  /api/v1/messages:
+    get:
+      description: Retrieves paginated messages
+      parameters:
+      - default: 1
+        description: Page number
+        in: query
+        name: page
+        type: integer
+      - default: 20
+        description: Page size
+        in: query
+        name: limit
+        type: integer
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/github_com_dutra_recodationsApp_internal_shared_presenter.ResponseDoc'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/github_com_dutra_recodationsApp_internal_shared_presenter.ResponseDoc'
+      security:
+      - BearerAuth: []
+      summary: List messages
+      tags:
+      - Messages
+    post:
+      consumes:
+      - multipart/form-data
+      - application/json
+      description: Creates a new message with optional image upload to GCS
+      parameters:
+      - description: Message Name
+        in: formData
+        name: name
+        type: string
+      - description: Message Content
+        in: formData
+        name: content
+        type: string
+      - description: Optional Image File
+        in: formData
+        name: file
+        type: file
+      - description: Or JSON payload
+        in: body
+        name: input
+        schema:
+          $ref: '#/definitions/github_com_dutra_recodationsApp_internal_modules_messages_dto.CreateMessageInput'
+      produces:
+      - application/json
+      responses:
+        "201":
+          description: Created
+          schema:
+            $ref: '#/definitions/github_com_dutra_recodationsApp_internal_shared_presenter.ResponseDoc'
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/github_com_dutra_recodationsApp_internal_shared_presenter.ResponseDoc'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/github_com_dutra_recodationsApp_internal_shared_presenter.ResponseDoc'
+      security:
+      - BearerAuth: []
+      summary: Create a new message
+      tags:
+      - Messages
+  /api/v1/messages/{id}:
+    delete:
+      description: Deletes a message and removes associated image from GCS
+      parameters:
+      - description: Message Snowflake ID
+        in: path
+        name: id
+        required: true
+        type: integer
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/github_com_dutra_recodationsApp_internal_shared_presenter.ResponseDoc'
+        "404":
+          description: Not Found
+          schema:
+            $ref: '#/definitions/github_com_dutra_recodationsApp_internal_shared_presenter.ResponseDoc'
+      security:
+      - BearerAuth: []
+      summary: Delete message
+      tags:
+      - Messages
+    get:
+      description: Retrieves message details (cached via L1/L2 cache)
+      parameters:
+      - description: Message Snowflake ID
+        in: path
+        name: id
+        required: true
+        type: integer
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/github_com_dutra_recodationsApp_internal_shared_presenter.ResponseDoc'
+        "404":
+          description: Not Found
+          schema:
+            $ref: '#/definitions/github_com_dutra_recodationsApp_internal_shared_presenter.ResponseDoc'
+      security:
+      - BearerAuth: []
+      summary: Get message by ID
+      tags:
+      - Messages
+    put:
+      consumes:
+      - multipart/form-data
+      - application/json
+      description: Updates message fields with optimistic concurrency locking
+      parameters:
+      - description: Message Snowflake ID
+        in: path
+        name: id
+        required: true
+        type: integer
+      - description: Updated Name
+        in: formData
+        name: name
+        type: string
+      - description: Updated Content
+        in: formData
+        name: content
+        type: string
+      - description: Current Version (Optimistic Lock)
+        in: formData
+        name: version
+        required: true
+        type: integer
+      - description: Updated Image File
+        in: formData
+        name: file
+        type: file
+      - description: Or JSON payload
+        in: body
+        name: input
+        schema:
+          $ref: '#/definitions/github_com_dutra_recodationsApp_internal_modules_messages_dto.UpdateMessageInput'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/github_com_dutra_recodationsApp_internal_shared_presenter.ResponseDoc'
+        "409":
+          description: Conflict
+          schema:
+            $ref: '#/definitions/github_com_dutra_recodationsApp_internal_shared_presenter.ResponseDoc'
+      security:
+      - BearerAuth: []
+      summary: Update message
+      tags:
+      - Messages
+  /api/v1/messages/{id}/transition:
+    patch:
+      consumes:
+      - application/json
+      description: Changes message state following the State Transition Pattern (DRAFT
+        -> PUBLISHED -> ARCHIVED)
+      parameters:
+      - description: Message Snowflake ID
+        in: path
+        name: id
+        required: true
+        type: integer
+      - description: Transition Input
+        in: body
+        name: input
+        required: true
+        schema:
+          $ref: '#/definitions/github_com_dutra_recodationsApp_internal_modules_messages_dto.TransitionMessageInput'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/github_com_dutra_recodationsApp_internal_shared_presenter.ResponseDoc'
+        "422":
+          description: Unprocessable Entity
+          schema:
+            $ref: '#/definitions/github_com_dutra_recodationsApp_internal_shared_presenter.ResponseDoc'
+      security:
+      - BearerAuth: []
+      summary: Transition message state
+      tags:
+      - Messages
+  /api/v1/rules:
+    get:
+      description: Retrieves all available permissions in the system
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/github_com_dutra_recodationsApp_internal_shared_presenter.ResponseDoc'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/github_com_dutra_recodationsApp_internal_shared_presenter.ResponseDoc'
+      security:
+      - BearerAuth: []
+      summary: List all registered rules
+      tags:
+      - Rules
+    post:
+      consumes:
+      - application/json
+      description: Creates a new granular permission rule
+      parameters:
+      - description: Rule Input
+        in: body
+        name: input
+        required: true
+        schema:
+          $ref: '#/definitions/github_com_dutra_recodationsApp_internal_modules_rules_dto.CreateRuleInput'
+      produces:
+      - application/json
+      responses:
+        "201":
+          description: Created
+          schema:
+            $ref: '#/definitions/github_com_dutra_recodationsApp_internal_shared_presenter.ResponseDoc'
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/github_com_dutra_recodationsApp_internal_shared_presenter.ResponseDoc'
+        "409":
+          description: Conflict
+          schema:
+            $ref: '#/definitions/github_com_dutra_recodationsApp_internal_shared_presenter.ResponseDoc'
+      security:
+      - BearerAuth: []
+      summary: Create a new RBAC rule
+      tags:
+      - Rules
+  /api/v1/users:
+    get:
+      description: Retrieves paginated list of users
+      parameters:
+      - default: 1
+        description: Page number
+        in: query
+        name: page
+        type: integer
+      - default: 20
+        description: Page size
+        in: query
+        name: limit
+        type: integer
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/github_com_dutra_recodationsApp_internal_shared_presenter.ResponseDoc'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/github_com_dutra_recodationsApp_internal_shared_presenter.ResponseDoc'
+      security:
+      - BearerAuth: []
+      summary: List all users
+      tags:
+      - Users
+    post:
+      consumes:
+      - application/json
+      description: Registers a new user with optional rule associations
+      parameters:
+      - description: User Creation Data
+        in: body
+        name: input
+        required: true
+        schema:
+          $ref: '#/definitions/github_com_dutra_recodationsApp_internal_modules_users_dto.CreateUserInput'
+      produces:
+      - application/json
+      responses:
+        "201":
+          description: Created
+          schema:
+            $ref: '#/definitions/github_com_dutra_recodationsApp_internal_shared_presenter.ResponseDoc'
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/github_com_dutra_recodationsApp_internal_shared_presenter.ResponseDoc'
+        "409":
+          description: Conflict
+          schema:
+            $ref: '#/definitions/github_com_dutra_recodationsApp_internal_shared_presenter.ResponseDoc'
+      security:
+      - BearerAuth: []
+      summary: Create a new user
+      tags:
+      - Users
+  /api/v1/users/{id}:
+    get:
+      description: Fetches user profile with rules (cached via L1/L2 cache)
+      parameters:
+      - description: User Snowflake ID
+        in: path
+        name: id
+        required: true
+        type: integer
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/github_com_dutra_recodationsApp_internal_shared_presenter.ResponseDoc'
+        "404":
+          description: Not Found
+          schema:
+            $ref: '#/definitions/github_com_dutra_recodationsApp_internal_shared_presenter.ResponseDoc'
+      security:
+      - BearerAuth: []
+      summary: Get user by ID
+      tags:
+      - Users
+  /api/v1/users/{id}/rules:
+    put:
+      consumes:
+      - application/json
+      description: Updates user permissions and invalidates L1/L2 cache
+      parameters:
+      - description: User Snowflake ID
+        in: path
+        name: id
+        required: true
+        type: integer
+      - description: Rule IDs
+        in: body
+        name: input
+        required: true
+        schema:
+          $ref: '#/definitions/github_com_dutra_recodationsApp_internal_modules_users_dto.AssignRulesInput'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/github_com_dutra_recodationsApp_internal_shared_presenter.ResponseDoc'
+        "404":
+          description: Not Found
+          schema:
+            $ref: '#/definitions/github_com_dutra_recodationsApp_internal_shared_presenter.ResponseDoc'
+      security:
+      - BearerAuth: []
+      summary: Assign rules to user
+      tags:
+      - Users
+securityDefinitions:
+  BearerAuth:
+    description: 'Enter Bearer token as: Bearer <token>'
+    in: header
+    name: Authorization
+    type: apiKey
+swagger: "2.0"
