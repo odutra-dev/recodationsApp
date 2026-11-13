@@ -174,52 +174,17 @@ func main() {
 	})
 
 	// Documentation Routes (Swagger UI + Swagger JSON + Scalar Modern Interactive UI)
-	swaggerUIHTML := `<!DOCTYPE html>
-<html lang="en">
-<head>
-  <meta charset="utf-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1" />
-  <title>Recodations Swagger UI</title>
-  <link rel="stylesheet" href="https://unpkg.com/swagger-ui-dist@5.11.0/swagger-ui.css" />
-  <style>
-    body { margin: 0; background: #fafafa; }
-  </style>
-</head>
-<body>
-<div id="swagger-ui"></div>
-<script src="https://unpkg.com/swagger-ui-dist@5.11.0/swagger-ui-bundle.js" crossorigin></script>
-<script src="https://unpkg.com/swagger-ui-dist@5.11.0/swagger-ui-standalone-preset.js" crossorigin></script>
-<script>
-  window.onload = () => {
-    window.ui = SwaggerUIBundle({
-      url: '/swagger/doc.json',
-      dom_id: '#swagger-ui',
-      deepLinking: true,
-      presets: [
-        SwaggerUIBundle.presets.apis,
-        SwaggerUIStandalonePreset
-      ],
-      plugins: [
-        SwaggerUIBundle.plugins.DownloadUrl
-      ],
-      layout: "StandaloneLayout",
-    });
-  };
-</script>
-</body>
-</html>`
-
 	app.Get("/swagger/doc.json", func(c fiber.Ctx) error {
 		c.Set("Content-Type", "application/json")
 		return c.SendFile("./docs/swagger.json")
 	})
 	app.Get("/swagger", func(c fiber.Ctx) error {
 		c.Set("Content-Type", "text/html")
-		return c.SendString(swaggerUIHTML)
+		return c.SendString(GetSwaggerUIHTML())
 	})
 	app.Get("/swagger/*", func(c fiber.Ctx) error {
 		c.Set("Content-Type", "text/html")
-		return c.SendString(swaggerUIHTML)
+		return c.SendString(GetSwaggerUIHTML())
 	})
 	app.Get("/docs", func(c fiber.Ctx) error {
 		c.Set("Content-Type", "text/html")
