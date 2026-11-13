@@ -31,6 +31,7 @@ import (
 	"github.com/dutra/recodationsApp/internal/shared/infrastructure/logger"
 	"github.com/dutra/recodationsApp/internal/shared/infrastructure/middleware"
 	"github.com/dutra/recodationsApp/internal/shared/infrastructure/storage"
+	"github.com/dutra/recodationsApp/internal/shared/presenter"
 	"github.com/dutra/recodationsApp/pkg/snowflake"
 	"github.com/gofiber/fiber/v3"
 	"github.com/redis/go-redis/v9"
@@ -180,11 +181,11 @@ func main() {
 	})
 	app.Get("/swagger", func(c fiber.Ctx) error {
 		c.Set("Content-Type", "text/html")
-		return c.SendString(GetSwaggerUIHTML())
+		return c.SendString(presenter.GetSwaggerUIHTML())
 	})
 	app.Get("/swagger/*", func(c fiber.Ctx) error {
 		c.Set("Content-Type", "text/html")
-		return c.SendString(GetSwaggerUIHTML())
+		return c.SendString(presenter.GetSwaggerUIHTML())
 	})
 	app.Get("/docs", func(c fiber.Ctx) error {
 		c.Set("Content-Type", "text/html")

@@ -1,6 +1,6 @@
-package main
+package presenter
 
-// GetSwaggerUIHTML returns the complete HTML page with interactive theme switcher.
+// GetSwaggerUIHTML returns the complete HTML page with interactive theme switcher for Swagger UI.
 func GetSwaggerUIHTML() string {
 	return `<!DOCTYPE html>
 <html lang="en">
