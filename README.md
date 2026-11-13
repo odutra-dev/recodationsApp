@@ -90,6 +90,7 @@ go run ./cmd/api/main.go
 ```
 
 The API will start at `http://localhost:3000`.
+- **Swagger UI**: `http://localhost:3000/swagger`
 - **Scalar Documentation**: `http://localhost:3000/docs`
 - **Swagger JSON**: `http://localhost:3000/swagger/doc.json`
 - **Health Checks**: `http://localhost:3000/healthz`, `http://localhost:3000/readyz`
